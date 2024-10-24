@@ -1,3 +1,4 @@
+
 // Socket connection
 const socket = io();
 
@@ -13,6 +14,7 @@ const toggleVideoButton = document.getElementById('toggleVideo');
 const toggleAudioButton = document.getElementById('toggleAudio');
 const toggleEmotionButton = document.getElementById('toggleEmotion');
 const leaveRoomButton = document.getElementById('leaveRoom');
+const roomIdDisplay = document.getElementById('roomIdDisplay');
 
 // WebRTC Configuration
 const configuration = {
@@ -29,7 +31,6 @@ let roomID;
 let isVideoEnabled = true;
 let isAudioEnabled = true;
 let isEmotionDetectionRunning = false;
-const emotions = ['neutral', 'happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised'];
 
 // Emotion Detection Functions
 async function loadModels() {
@@ -47,61 +48,40 @@ async function loadModels() {
 }
 
 function createEmotionMeters() {
-    const container = document.getElementById('emotion-meters');
-    if (!container) return;
+    const localContainer = document.getElementById('local-emotions');
+    const remoteContainer = document.getElementById('remote-emotions');
     
-    container.innerHTML = '';
+    if (!localContainer || !remoteContainer) return;
     
-    // Create separate sections for local and remote emotions
-    const localSection = document.createElement('div');
-    localSection.innerHTML = '<h4>Local User Emotions</h4>';
-    const remoteSection = document.createElement('div');
-    remoteSection.innerHTML = '<h4>Remote User Emotions</h4>';
-    
-    emotions.forEach(emotion => {
-        // Local emotion meters
-        const localMeterDiv = document.createElement('div');
-        localMeterDiv.className = 'emotion-meter';
-        localMeterDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                <span>${emotion}</span>
-                <span id="local-${emotion}-value">0%</span>
-            </div>
-            <div class="emotion-bar" id="local-${emotion}-bar" style="width: 0%"></div>
-        `;
-        localSection.appendChild(localMeterDiv);
-        
-        // Remote emotion meters
-        const remoteMeterDiv = document.createElement('div');
-        remoteMeterDiv.className = 'emotion-meter';
-        remoteMeterDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
-                <span>${emotion}</span>
-                <span id="remote-${emotion}-value">0%</span>
-            </div>
-            <div class="emotion-bar" id="remote-${emotion}-bar" style="width: 0%"></div>
-        `;
-        remoteSection.appendChild(remoteMeterDiv);
-    });
-    
-    container.appendChild(localSection);
-    container.appendChild(remoteSection);
+    localContainer.innerHTML = '';
+    remoteContainer.innerHTML = '';
 }
 
 function updateEmotionMeters(expressions, isLocal = true) {
-    const prefix = isLocal ? 'local' : 'remote';
-    emotions.forEach(emotion => {
-        const value = Math.round(expressions[emotion] * 100);
-        const bar = document.getElementById(`${prefix}-${emotion}-bar`);
-        const valueDisplay = document.getElementById(`${prefix}-${emotion}-value`);
-        if (bar && valueDisplay) {
-            bar.style.width = `${value}%`;
-            valueDisplay.textContent = `${value}%`;
-        }
+    const container = document.getElementById(isLocal ? 'local-emotions' : 'remote-emotions');
+    if (!container) return;
+
+    // Sort emotions by value and get top 3
+    const sortedEmotions = Object.entries(expressions)
+        .sort(([,a], [,b]) => b - a)
+        .slice(0, 3);
+
+    container.innerHTML = '';
+    
+    sortedEmotions.forEach(([emotion, value]) => {
+        const meterDiv = document.createElement('div');
+        meterDiv.className = 'emotion-meter';
+        const percentage = Math.round(value * 100);
+        meterDiv.innerHTML = `
+            <div>${emotion}</div>
+            <div>${percentage}%</div>
+            <div class="emotion-bar" style="width: ${percentage}%"></div>
+        `;
+        container.appendChild(meterDiv);
     });
 }
 
-async function detectEmotions(video, overlay, isLocal = true) {
+async function detectEmotions(video, isLocal = true) {
     if (!video.srcObject || !isEmotionDetectionRunning) return;
     
     try {
@@ -110,9 +90,6 @@ async function detectEmotions(video, overlay, isLocal = true) {
             .withFaceExpressions();
             
         if (detection) {
-            const dominantEmotion = Object.entries(detection.expressions)
-                .reduce((a, b) => (a[1] > b[1] ? a : b))[0];
-            overlay.textContent = `Emotion: ${dominantEmotion}`;
             updateEmotionMeters(detection.expressions, isLocal);
             
             if (isLocal) {
@@ -124,7 +101,7 @@ async function detectEmotions(video, overlay, isLocal = true) {
         }
         
         if (isEmotionDetectionRunning) {
-            requestAnimationFrame(() => detectEmotions(video, overlay, isLocal));
+            requestAnimationFrame(() => detectEmotions(video, isLocal));
         }
     } catch (error) {
         console.error('Error detecting emotions:', error);
@@ -141,11 +118,7 @@ async function startEmotionDetection() {
     createEmotionMeters();
     isEmotionDetectionRunning = true;
     
-    detectEmotions(
-        document.getElementById('localVideo'),
-        document.getElementById('localEmotion'),
-        true
-    );
+    detectEmotions(localVideo, true);
 }
 
 async function setupMediaStream() {
@@ -167,8 +140,8 @@ createRoomButton.addEventListener('click', async () => {
     const success = await setupMediaStream();
     if (success) {
         roomID = Math.random().toString(36).substring(2, 7);
+        roomIdDisplay.textContent = roomID;
         socket.emit('join-room', roomID);
-        alert(`Your Room ID is: ${roomID}`);
         startCall();
     }
 });
@@ -181,27 +154,17 @@ joinRoomButton.addEventListener('click', async () => {
     }
     const success = await setupMediaStream();
     if (success) {
+        roomIdDisplay.textContent = roomID;
         socket.emit('join-room', roomID);
         startCall();
     }
 });
 
-// This function will check if emotion detection module is loaded before calling it
 async function startCall() {
     roomSelection.style.display = 'none';
     videoCallSection.style.display = 'block';
-    
-    // Check if emotion detection is available
-    if (typeof window.startEmotionDetection === 'function') {
-        await window.startEmotionDetection();
-    } else {
-        console.warn('Emotion detection not available');
-        // Hide emotion-related elements if the feature isn't available
-        const emotionStats = document.getElementById('emotion-stats');
-        const toggleEmotionButton = document.getElementById('toggleEmotion');
-        if (emotionStats) emotionStats.style.display = 'none';
-        if (toggleEmotionButton) toggleEmotionButton.style.display = 'none';
-    }
+    document.getElementById('room-info').style.display = 'block';
+    await startEmotionDetection();
 }
 
 socket.on('user-connected', async (userID) => {
@@ -242,6 +205,10 @@ socket.on('signal', async ({ signal, senderID }) => {
     }
 });
 
+socket.on('emotion-data', (data) => {
+    updateEmotionMeters(data.emotions, false);
+});
+
 async function createPeerConnection() {
     peerConnection = new RTCPeerConnection(configuration);
     
@@ -262,13 +229,7 @@ async function createPeerConnection() {
         console.log('ICE Connection State:', peerConnection.iceConnectionState);
     };
 }
-socket.on('emotion-data', (data) => {
-    const remoteOverlay = document.getElementById('remoteEmotion');
-    const dominantEmotion = Object.entries(data.emotions)
-        .reduce((a, b) => (a[1] > b[1] ? a : b))[0];
-    remoteOverlay.textContent = `Emotion: ${dominantEmotion}`;
-    updateEmotionMeters(data.emotions, false);
-});
+
 async function addLocalTracks() {
     if (localStream) {
         localStream.getTracks().forEach(track => {
@@ -299,6 +260,14 @@ toggleAudioButton.addEventListener('click', () => {
     }
 });
 
+toggleEmotionButton.addEventListener('click', () => {
+    isEmotionDetectionRunning = !isEmotionDetectionRunning;
+    toggleEmotionButton.textContent = isEmotionDetectionRunning ? 'Stop Emotion Detection' : 'Start Emotion Detection';
+    if (isEmotionDetectionRunning) {
+        startEmotionDetection();
+    }
+});
+
 leaveRoomButton.addEventListener('click', () => {
     if (peerConnection) {
         peerConnection.close();
@@ -312,7 +281,8 @@ leaveRoomButton.addEventListener('click', () => {
     remoteVideo.srcObject = null;
     videoCallSection.style.display = 'none';
     roomSelection.style.display = 'block';
-    stopEmotionDetection();
+    document.getElementById('room-info').style.display = 'none';
+    isEmotionDetectionRunning = false;
     socket.emit('leave-room', roomID);
 });
 
