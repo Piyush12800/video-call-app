@@ -1,7 +1,11 @@
 
 # Video Chat with Emotion Recognition
 
+
 This project is a web-based video chat application that supports real-time emotion recognition using WebRTC and `face-api.js`. It allows users to create or join a room for 1-to-1 video calls, with emotion detection displayed for both the local and remote users.
+## Live Preview
+
+[Live Preview of Video Chat with Emotion Recognition](hhttps://video-call-app-1-9gv4.onrender.com/)
 
 ## Features
 
