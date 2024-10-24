@@ -7,7 +7,17 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static(path.join(__dirname, '../client')));
+// Serve static files from the public directory
+app.use(express.static(path.join(__dirname, '../client'), {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
+}));
+
+// Serve face-api models
+app.use('/models', express.static(path.join(__dirname, '../client/models')));
 
 const rooms = new Map();
 
