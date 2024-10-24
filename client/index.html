@@ -85,6 +85,116 @@
             border: 1px solid #ddd;
             border-radius: 4px;
         }
+        /* Existing styles remain unchanged */
+
+@media only screen and (max-width: 768px) {
+    body {
+        margin: 10px;
+    }
+
+    .video-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    video {
+        width: 100%;
+        max-width: 350px;
+        height: auto;
+    }
+
+    .emotion-overlay {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+
+    #emotion-stats {
+        width: 100%;
+        max-width: 100%;
+        margin: 10px auto;
+        padding: 10px;
+    }
+
+    .controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    button {
+        width: calc(50% - 10px);
+        margin: 5px;
+        font-size: 14px;
+    }
+
+    input {
+        width: calc(100% - 20px);
+        margin: 5px auto;
+        font-size: 14px;
+    }
+
+    #room-selection {
+        text-align: center;
+    }
+
+    h2 {
+        font-size: 20px;
+    }
+
+    h3 {
+        font-size: 18px;
+    }
+}
+
+/* Additional styling for better appearance */
+
+body {
+    background: #f0f2f5;
+    color: #333;
+}
+
+h2, h3 {
+    color: #333;
+    text-align: center;
+}
+
+.video-wrapper {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#room-selection {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button {
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+input {
+    width: calc(100% - 20px);
+    max-width: 280px;
+}
+
+#emotion-stats {
+    background: #fff;
+}
+
+.emotion-bar {
+    background: linear-gradient(to right, #4CAF50, #8BC34A);
+}
+
     </style>
 </head>
 <body>
@@ -108,6 +218,10 @@
                 <div id="remoteEmotion" class="emotion-overlay"></div>
             </div>
         </div>
+        <div id="room-info" style="display: none; text-align: center; margin-top: 10px;">
+            <h3>Room ID: <span id="roomIdDisplay"></span></h3>
+        </div>
+        
             <h1 >Emotions will be here</h1>
         <div id="emotion-stats">
             <h3>Emotion Analysis</h3>
