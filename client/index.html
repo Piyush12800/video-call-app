@@ -14,7 +14,7 @@
         
         .video-container {
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             gap: 20px;
             margin-top: 20px;
         }
@@ -56,6 +56,7 @@
             display: flex;
             gap: 10px;
             margin-top: 5px;
+            align-items: center;
         }
 
         .emotion-meter {
@@ -130,25 +131,28 @@
             .video-container {
                 flex-direction: column;
                 align-items: center;
+                gap: 15px;
             }
 
             .video-wrapper.local {
-                width: 120px;
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index: 100;
+                position: static;
+                width: 100%;
+                max-width: 400px;
             }
 
+            .video-wrapper.remote video,
             .video-wrapper.local video {
-                width: 120px;
-                height: 90px;
-            }
-
-            .video-wrapper.remote video {
                 width: 100%;
                 max-width: 100vw;
                 height: auto;
+            }
+
+            .participant-container:first-child .emotions-display {
+                order: 1;
+            }
+
+            .participant-container:last-child .emotions-display {
+                order: 2;
             }
 
             .emotions-display {
